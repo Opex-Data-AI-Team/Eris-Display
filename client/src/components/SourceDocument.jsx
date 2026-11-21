@@ -68,6 +68,18 @@ export default function SourceDocument({ data }) {
         <Field label="Document URL" mono>{source.doc?.url}</Field>
         <Field label="License">{source.doc?.license}</Field>
         <Field label="Supersedes">{source.supersedes_id}</Field>
+
+        <Field label="Legal basis">
+          {source.legal_basis_ids?.length > 0 && (
+            <div className="chip-row">{source.legal_basis_ids.map((id) => <span className="chip mono" key={id}>{id}</span>)}</div>
+          )}
+        </Field>
+        <Field label="Amends">
+          {source.amends_ids?.length > 0 && (
+            <div className="chip-row">{source.amends_ids.map((id) => <span className="chip mono" key={id}>{id}</span>)}</div>
+          )}
+        </Field>
+        <Field label="Organization scope">{source.org_id}</Field>
       </div>
 
       <div className="audit-row">

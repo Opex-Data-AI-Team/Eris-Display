@@ -4,11 +4,11 @@ export default function StatStrip({ counts }) {
   if (!counts) return null;
   const items = [
     ['Sources', counts.sources],
-    ['Clauses', counts.elements],
-    ['Task templates', counts.task_templates],
-    ['Risk scenarios', counts.risk_scenarios],
-    ['Issuers', counts.issuers],
-    ['Controlled terms', counts.vocab],
+    ['Requirements', counts.requirements],
+    ['Critical requirements', counts.critical_requirements],
+    ['Sanctions', counts.sanctions],
+    ['Dependency edges', counts.dependency_edges],
+    ['Topics', counts.topics],
   ];
   return (
     <div className="stat-strip">

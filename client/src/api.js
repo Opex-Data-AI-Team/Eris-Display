@@ -6,11 +6,24 @@ async function getJSON(path) {
   return res.json();
 }
 
+function qs(params) {
+  const usp = new URLSearchParams();
+  Object.entries(params || {}).forEach(([k, v]) => {
+    if (v !== undefined && v !== null && v !== '') usp.set(k, v);
+  });
+  const s = usp.toString();
+  return s ? `?${s}` : '';
+}
+
 export const api = {
   overview: () => getJSON('/overview'),
   sources: () => getJSON('/sources'),
-  source: (id) => getJSON(`/sources/${id}`),
-  elementTasks: (id) => getJSON(`/elements/${id}/tasks`),
-  riskScenarios: () => getJSON('/risk-scenarios'),
-  vocab: () => getJSON('/vocab'),
+  source: (sourceId) => getJSON(`/sources/${encodeURIComponent(sourceId)}`),
+  sourceFullText: (sourceId) => getJSON(`/sources/${encodeURIComponent(sourceId)}/full-text`),
+  requirements: (sourceId, params) => getJSON(`/sources/${encodeURIComponent(sourceId)}/requirements${qs(params)}`),
+  requirement: (requirementId) => getJSON(`/requirements/${encodeURIComponent(requirementId)}`),
+  sanctions: () => getJSON('/sanctions'),
+  dependencies: () => getJSON('/dependencies'),
+  referenceData: () => getJSON('/reference-data'),
+  activity: (limit) => getJSON(`/activity${qs({ limit })}`),
 };

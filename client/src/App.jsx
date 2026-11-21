@@ -1,12 +1,15 @@
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState, useCallback, useMemo } from 'react';
 import { api } from './api.js';
 import StatStrip from './components/StatStrip.jsx';
 import SourceSidebar from './components/SourceSidebar.jsx';
 import SourceDocument from './components/SourceDocument.jsx';
-import ElementTree from './components/ElementTree.jsx';
-import TaskInspector from './components/TaskInspector.jsx';
-import RiskRegister from './components/RiskRegister.jsx';
-import VocabView from './components/VocabView.jsx';
+import RequirementsBrowser from './components/RequirementsBrowser.jsx';
+import RequirementInspector from './components/RequirementInspector.jsx';
+import SanctionsRegister from './components/SanctionsRegister.jsx';
+import DependenciesView from './components/DependenciesView.jsx';
+import ReferenceDataView from './components/ReferenceDataView.jsx';
+
+const DEFAULT_FILTERS = { q: '', topic: '', critical: '', page: 1 };
 
 export default function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('eris-theme') || 'light');
@@ -18,9 +21,15 @@ export default function App() {
   const [sourceDetail, setSourceDetail] = useState(null);
   const [sourceLoading, setSourceLoading] = useState(false);
 
-  const [selectedElement, setSelectedElement] = useState(null);
-  const [elementTasks, setElementTasks] = useState([]);
-  const [tasksLoading, setTasksLoading] = useState(false);
+  const [topicLabels, setTopicLabels] = useState({});
+
+  const [filters, setFilters] = useState(DEFAULT_FILTERS);
+  const [results, setResults] = useState(null);
+  const [resultsLoading, setResultsLoading] = useState(false);
+
+  const [selectedRequirementId, setSelectedRequirementId] = useState(null);
+  const [requirementDetail, setRequirementDetail] = useState(null);
+  const [requirementLoading, setRequirementLoading] = useState(false);
 
   const [error, setError] = useState(null);
 
@@ -34,30 +43,54 @@ export default function App() {
       .then((data) => {
         setCounts(data.counts);
         setSources(data.sources);
-        if (data.sources.length > 0) setSelectedSourceId(data.sources[0].id);
+        if (data.sources.length > 0) setSelectedSourceId(data.sources[0].source_id);
       })
       .catch((e) => setError(e.message));
+
+    api.referenceData()
+      .then((data) => {
+        const map = {};
+        (data.topics || []).forEach((t) => { map[t.id] = t.label; });
+        setTopicLabels(map);
+      })
+      .catch(() => {});
   }, []);
 
   useEffect(() => {
     if (!selectedSourceId) return;
     setSourceLoading(true);
-    setSelectedElement(null);
-    setElementTasks([]);
+    setSelectedRequirementId(null);
+    setRequirementDetail(null);
+    setFilters(DEFAULT_FILTERS);
     api.source(selectedSourceId)
-      .then((data) => setSourceDetail(data))
+      .then(setSourceDetail)
       .catch((e) => setError(e.message))
       .finally(() => setSourceLoading(false));
   }, [selectedSourceId]);
 
-  const onSelectElement = useCallback((node) => {
-    setSelectedElement(node);
-    setTasksLoading(true);
-    api.elementTasks(node.id)
-      .then((data) => setElementTasks(data.tasks))
+  useEffect(() => {
+    if (!selectedSourceId) return;
+    setResultsLoading(true);
+    api.requirements(selectedSourceId, filters)
+      .then(setResults)
       .catch((e) => setError(e.message))
-      .finally(() => setTasksLoading(false));
+      .finally(() => setResultsLoading(false));
+  }, [selectedSourceId, filters]);
+
+  const onFilterChange = useCallback((patch) => {
+    setFilters((f) => ({ ...f, ...patch }));
   }, []);
+
+  const onSelectRequirement = useCallback((requirementId) => {
+    setSelectedRequirementId(requirementId);
+    setRequirementLoading(true);
+    api.requirement(requirementId)
+      .then(setRequirementDetail)
+      .catch((e) => setError(e.message))
+      .finally(() => setRequirementLoading(false));
+  }, []);
+
+  const topics = useMemo(() => sourceDetail?.topic_breakdown || [], [sourceDetail]);
 
   return (
     <div className="app">
@@ -66,13 +99,14 @@ export default function App() {
           <div className="mark">E</div>
           <div>
             <h1>Eris</h1>
-            <div className="sub">regulatory compliance register · live from MongoDB</div>
+            <div className="sub">regulatory requirements register · live from MongoDB</div>
           </div>
         </div>
         <nav className="topnav">
           <button className={view === 'sources' ? 'active' : ''} onClick={() => setView('sources')}>Sources</button>
-          <button className={view === 'risks' ? 'active' : ''} onClick={() => setView('risks')}>Risk register</button>
-          <button className={view === 'vocab' ? 'active' : ''} onClick={() => setView('vocab')}>Vocabulary</button>
+          <button className={view === 'sanctions' ? 'active' : ''} onClick={() => setView('sanctions')}>Sanctions</button>
+          <button className={view === 'dependencies' ? 'active' : ''} onClick={() => setView('dependencies')}>Dependencies</button>
+          <button className={view === 'reference' ? 'active' : ''} onClick={() => setView('reference')}>Reference data</button>
         </nav>
         <button className="theme-toggle" onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}>
           {theme === 'light' ? 'Dark mode' : 'Light mode'}
@@ -90,17 +124,23 @@ export default function App() {
             {sourceLoading && <div className="loading">Loading source…</div>}
             {!sourceLoading && sourceDetail && (
               <>
-                <SourceDocument data={sourceDetail} />
+                <SourceDocument data={sourceDetail} sourceId={selectedSourceId} />
                 <div className="explorer">
-                  <div className="tree-panel">
-                    <div className="panel-title">Clause outline · {sourceDetail.element_count} clauses</div>
-                    <ElementTree
-                      tree={sourceDetail.tree}
-                      selectedId={selectedElement?.id}
-                      onSelect={onSelectElement}
-                    />
-                  </div>
-                  <TaskInspector element={selectedElement} tasks={elementTasks} loading={tasksLoading} />
+                  <RequirementsBrowser
+                    topics={topics}
+                    topicLabels={topicLabels}
+                    filters={filters}
+                    onFilterChange={onFilterChange}
+                    results={results}
+                    loading={resultsLoading}
+                    selectedId={selectedRequirementId}
+                    onSelect={onSelectRequirement}
+                  />
+                  <RequirementInspector
+                    detail={requirementDetail}
+                    loading={requirementLoading}
+                    topicLabels={topicLabels}
+                  />
                 </div>
               </>
             )}
@@ -108,15 +148,21 @@ export default function App() {
         </div>
       )}
 
-      {view === 'risks' && (
+      {view === 'sanctions' && (
         <div className="main" style={{ flex: 1 }}>
-          <RiskRegister />
+          <SanctionsRegister />
         </div>
       )}
 
-      {view === 'vocab' && (
+      {view === 'dependencies' && (
         <div className="main" style={{ flex: 1 }}>
-          <VocabView />
+          <DependenciesView />
+        </div>
+      )}
+
+      {view === 'reference' && (
+        <div className="main" style={{ flex: 1 }}>
+          <ReferenceDataView />
         </div>
       )}
     </div>

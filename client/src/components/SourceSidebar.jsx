@@ -6,16 +6,16 @@ export default function SourceSidebar({ sources, selectedId, onSelect }) {
       <div className="sidebar-head">Sources · {sources.length}</div>
       {sources.map((s) => (
         <button
-          key={s.id}
-          className={`source-card ${s.id === selectedId ? 'active' : ''}`}
-          onClick={() => onSelect(s.id)}
+          key={s.source_id}
+          className={`source-card ${s.source_id === selectedId ? 'active' : ''}`}
+          onClick={() => onSelect(s.source_id)}
         >
-          <div className="issuer">{s.issuer_code}</div>
-          <div className="title">{s.ref_no || s.work_key}</div>
+          <div className="issuer">{s.issuer?.code || s.regulator_id}</div>
+          <div className="title">{s.number || s.source_id}</div>
           <div className="refno">{s.title}</div>
           <div className="counts">
-            <span><b className="tabular">{s.element_count}</b> clauses</span>
-            <span><b className="tabular">{s.task_count}</b> tasks</span>
+            <span><b className="tabular">{s.requirement_count}</b> requirements</span>
+            <span><b className="tabular">{s.sanction_count}</b> sanctions</span>
           </div>
         </button>
       ))}

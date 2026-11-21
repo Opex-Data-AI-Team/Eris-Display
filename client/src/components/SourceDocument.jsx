@@ -112,7 +112,11 @@ export default function SourceDocument({ data, sourceId }) {
       <Section title="Lineage &amp; verification">
         <Field label="Supersedes">{source.supersedes}</Field>
         <Field label="Superseded by">{source.superseded_by}</Field>
-        <Field label="Changes from previous">{source.changes_from_previous}</Field>
+        <Field label="Changes from previous">
+          {source.changes_from_previous?.sections_changed?.length > 0 && (
+            <div className="chip-row">{source.changes_from_previous.sections_changed.map((s) => <span className="chip" key={s}>{s}</span>)}</div>
+          )}
+        </Field>
         <Field label="Verified by">{source.verified_by}</Field>
         <Field label="Verified at">{fmtDate(source.verified_at)}</Field>
       </Section>

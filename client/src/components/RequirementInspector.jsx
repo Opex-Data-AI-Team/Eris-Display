@@ -1,5 +1,23 @@
 import React from 'react';
 
+const STATUS_PILL = {
+  draft: 'draft', deferred: 'deferred',
+  accepted: 'accepted',
+  rejected: 'rejected', superseded: 'superseded',
+};
+
+function renderApplicabilityRule(rule) {
+  if (!rule) return null;
+  if (typeof rule === 'string') return <p className="ins-text">{rule}</p>;
+  return (
+    <div className="chip-row" style={{ marginBottom: 12 }}>
+      {Object.entries(rule).map(([k, v]) => (
+        <span className="chip" key={k}>{k}: {typeof v === 'object' ? JSON.stringify(v) : String(v)}</span>
+      ))}
+    </div>
+  );
+}
+
 export default function RequirementInspector({ detail, loading, topicLabels }) {
   if (loading) {
     return (
@@ -26,9 +44,10 @@ export default function RequirementInspector({ detail, loading, topicLabels }) {
       <div className="ins-title">{r.citation}</div>
 
       <div className="pill-row">
+        <span className={`status-pill ${STATUS_PILL[r.status] || ''}`}>{r.status}</span>
         {r.is_critical && <span className="pill mandatory">critical</span>}
         {r.mandatory && <span className="pill owner">mandatory</span>}
-        <span className="pill">{r.canonical_state}</span>
+        <span className="pill">{r.canonical_state?.replace(/_/g, ' ')}</span>
         {r.ai?.confidence != null && <span className="pill">confidence {Math.round(r.ai.confidence * 100)}%</span>}
       </div>
 
@@ -39,10 +58,26 @@ export default function RequirementInspector({ detail, loading, topicLabels }) {
           <div className="ins-subhead">Duty holders</div>
           <div className="chip-row" style={{ marginBottom: 12 }}>
             {r.duty_holder.map((d, i) => (
-              <span className="chip" key={i} title={`confidence ${Math.round((d.confidence || 0) * 100)}%`}>{d.value}</span>
+              <span className="chip" key={i} title={`confidence ${Math.round((d.confidence || 0) * 100)}%`}>
+                {d.value}{d.provenance && d.provenance !== 'text' ? ` (${d.provenance})` : ''}
+              </span>
             ))}
           </div>
         </>
+      )}
+
+      {r.guidance_reason && (
+        <>
+          <div className="ins-subhead">Guidance reason</div>
+          <p className="ins-text">{r.guidance_reason}</p>
+        </>
+      )}
+
+      {r.review && (
+        <div className="callout small">
+          <div className="callout-title">Reviewed · {r.review.decision}</div>
+          <p>by {r.review.reviewer}{r.review.reason ? ` — ${r.review.reason}` : ''}</p>
+        </div>
       )}
 
       {r.parameters?.length > 0 && (
@@ -51,6 +86,17 @@ export default function RequirementInspector({ detail, loading, topicLabels }) {
           <div className="chip-row" style={{ marginBottom: 12 }}>
             {r.parameters.map((p, i) => (
               <span className="chip" key={i}>{p.verbatim || `${p.value}${p.unit || ''}`} ({p.kind})</span>
+            ))}
+          </div>
+        </>
+      )}
+
+      {r.periods?.length > 0 && (
+        <>
+          <div className="ins-subhead">Periods</div>
+          <div className="chip-row" style={{ marginBottom: 12 }}>
+            {r.periods.map((p) => (
+              <span className="chip" key={p.sn}>#{p.sn}: {new Date(p.start).toISOString().slice(0, 10)} → {new Date(p.end).toISOString().slice(0, 10)}</span>
             ))}
           </div>
         </>
@@ -71,7 +117,7 @@ export default function RequirementInspector({ detail, loading, topicLabels }) {
       {r.applicability_rule && (
         <>
           <div className="ins-subhead">Applicability rule</div>
-          <p className="ins-text">{r.applicability_rule}</p>
+          {renderApplicabilityRule(r.applicability_rule)}
         </>
       )}
 

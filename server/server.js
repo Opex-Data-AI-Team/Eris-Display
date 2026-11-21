@@ -88,7 +88,7 @@ function serializeRequirement(r) {
     mandatory: r.mandatory,
     missing_dependency: r.missing_dependency || null,
     deferred: r.deferred || null,
-    review: r.review,
+    review: r.review || null,
     status: r.status,
     batch_id: r.batch_id,
     ai: r.ai || null,
@@ -139,6 +139,50 @@ function serializeEdge(d) {
   };
 }
 
+function serializeRelationship(r) {
+  return {
+    id: toId(r._id),
+    from_id: r.from_id,
+    to_id: r.to_id,
+    type: r.type,
+    topic_id: r.topic_id,
+    rationale: r.rationale,
+    confidence: r.confidence,
+    reviewer: r.reviewer,
+    from_version: r.from_version,
+    to_version: r.to_version,
+    status: r.status,
+    revalidate: r.revalidate || null,
+  };
+}
+
+function serializeConflict(c) {
+  return {
+    id: toId(c._id),
+    kind: c.kind,
+    members: c.members || [],
+    pinned_versions: c.pinned_versions || [],
+    legal_review_status: c.legal_review_status,
+    working_standard: c.working_standard,
+    reason: c.reason,
+    precedence_rank: c.precedence_rank,
+    precedence_outcome: c.precedence_outcome,
+    decider: c.decider,
+    decision: c.decision,
+    status: c.status,
+  };
+}
+
+function serializeCanonical(c) {
+  return {
+    id: toId(c._id),
+    canonical_id: c.canonical_id,
+    description: c.description,
+    topic_id: c.topic_id,
+    requirement_ids: c.requirement_ids || [],
+  };
+}
+
 async function sourceCounts(sourceId) {
   const [requirement_count, sanctions, dependency_count] = await Promise.all([
     db.collection('requirements').countDocuments({ source_id: sourceId }),
@@ -150,11 +194,14 @@ async function sourceCounts(sourceId) {
 }
 
 app.get('/api/overview', async (req, res) => {
-  const [sources, requirements, sanctions, dependency_edges, refTopics] = await Promise.all([
+  const [sources, requirements, sanctions, dependency_edges, relationships, conflicts, canonical_requirements, refTopics] = await Promise.all([
     db.collection('sources').countDocuments(),
     db.collection('requirements').countDocuments(),
     db.collection('sanctions').countDocuments(),
     db.collection('dependency_edges').countDocuments(),
+    db.collection('relationships').countDocuments(),
+    db.collection('conflicts_and_cycles').countDocuments(),
+    db.collection('canonical_requirements').countDocuments(),
     db.collection('reference_data').findOne({ _id: 'topics' }),
   ]);
   const critical_requirements = await db.collection('requirements').countDocuments({ is_critical: true });
@@ -171,6 +218,9 @@ app.get('/api/overview', async (req, res) => {
       critical_requirements,
       sanctions,
       dependency_edges,
+      relationships,
+      conflicts,
+      canonical_requirements,
       topics: (refTopics?.values || []).length,
     },
     sources: sourcesSummary,
@@ -213,13 +263,14 @@ app.get('/api/sources/:sourceId/full-text', async (req, res) => {
 });
 
 app.get('/api/sources/:sourceId/requirements', async (req, res) => {
-  const { topic, critical, q } = req.query;
+  const { topic, critical, status, q } = req.query;
   const page = Math.max(parseInt(req.query.page, 10) || 1, 1);
   const pageSize = Math.min(Math.max(parseInt(req.query.pageSize, 10) || 25, 1), 100);
 
   const match = { source_id: req.params.sourceId };
   if (topic) match.topic_id = topic;
   if (critical === 'true') match.is_critical = true;
+  if (status) match.status = status;
   if (q) {
     const re = new RegExp(q.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'), 'i');
     match.$or = [{ summary: re }, { original_text: re }, { citation: re }, { requirement_id: re }];
@@ -274,6 +325,21 @@ app.get('/api/sources/:sourceId/dependencies', async (req, res) => {
     .find({ $or: [{ from_source_id: req.params.sourceId }, { to_source_id: req.params.sourceId }] })
     .toArray();
   res.json(edges.map(serializeEdge));
+});
+
+app.get('/api/relationships', async (req, res) => {
+  const all = await db.collection('relationships').find().toArray();
+  res.json(all.map(serializeRelationship));
+});
+
+app.get('/api/conflicts', async (req, res) => {
+  const all = await db.collection('conflicts_and_cycles').find().toArray();
+  res.json(all.map(serializeConflict));
+});
+
+app.get('/api/canonical-requirements', async (req, res) => {
+  const all = await db.collection('canonical_requirements').find().toArray();
+  res.json(all.map(serializeCanonical));
 });
 
 app.get('/api/reference-data', async (req, res) => {

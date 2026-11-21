@@ -24,6 +24,9 @@ export const api = {
   requirement: (requirementId) => getJSON(`/requirements/${encodeURIComponent(requirementId)}`),
   sanctions: () => getJSON('/sanctions'),
   dependencies: () => getJSON('/dependencies'),
+  relationships: () => getJSON('/relationships'),
+  conflicts: () => getJSON('/conflicts'),
+  canonicalRequirements: () => getJSON('/canonical-requirements'),
   referenceData: () => getJSON('/reference-data'),
   activity: (limit) => getJSON(`/activity${qs({ limit })}`),
 };

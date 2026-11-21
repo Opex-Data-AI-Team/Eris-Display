@@ -7,9 +7,12 @@ import RequirementsBrowser from './components/RequirementsBrowser.jsx';
 import RequirementInspector from './components/RequirementInspector.jsx';
 import SanctionsRegister from './components/SanctionsRegister.jsx';
 import DependenciesView from './components/DependenciesView.jsx';
+import RelationshipsView from './components/RelationshipsView.jsx';
+import ConflictsView from './components/ConflictsView.jsx';
+import CanonicalRequirementsView from './components/CanonicalRequirementsView.jsx';
 import ReferenceDataView from './components/ReferenceDataView.jsx';
 
-const DEFAULT_FILTERS = { q: '', topic: '', critical: '', page: 1 };
+const DEFAULT_FILTERS = { q: '', topic: '', critical: '', status: '', page: 1 };
 
 export default function App() {
   const [theme, setTheme] = useState(() => localStorage.getItem('eris-theme') || 'light');
@@ -106,6 +109,9 @@ export default function App() {
           <button className={view === 'sources' ? 'active' : ''} onClick={() => setView('sources')}>Sources</button>
           <button className={view === 'sanctions' ? 'active' : ''} onClick={() => setView('sanctions')}>Sanctions</button>
           <button className={view === 'dependencies' ? 'active' : ''} onClick={() => setView('dependencies')}>Dependencies</button>
+          <button className={view === 'relationships' ? 'active' : ''} onClick={() => setView('relationships')}>Relationships</button>
+          <button className={view === 'conflicts' ? 'active' : ''} onClick={() => setView('conflicts')}>Conflicts</button>
+          <button className={view === 'canonical' ? 'active' : ''} onClick={() => setView('canonical')}>Canonical</button>
           <button className={view === 'reference' ? 'active' : ''} onClick={() => setView('reference')}>Reference data</button>
         </nav>
         <button className="theme-toggle" onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}>
@@ -157,6 +163,24 @@ export default function App() {
       {view === 'dependencies' && (
         <div className="main" style={{ flex: 1 }}>
           <DependenciesView />
+        </div>
+      )}
+
+      {view === 'relationships' && (
+        <div className="main" style={{ flex: 1 }}>
+          <RelationshipsView />
+        </div>
+      )}
+
+      {view === 'conflicts' && (
+        <div className="main" style={{ flex: 1 }}>
+          <ConflictsView />
+        </div>
+      )}
+
+      {view === 'canonical' && (
+        <div className="main" style={{ flex: 1 }}>
+          <CanonicalRequirementsView />
         </div>
       )}
 

@@ -19,7 +19,7 @@ export default function DependenciesView() {
         <div className="risk-card" key={e.id}>
           <div className="foot" style={{ marginBottom: 8 }}>
             <span className="code">{e.from_source_id}</span>
-            <span className={`status-pill ${e.held ? 'accepted' : 'draft'}`}>{e.held ? 'held' : 'outstanding'}</span>
+            <span className={`status-pill ${e.held ? 'held' : 'outstanding'}`}>{e.held ? 'held' : 'outstanding'}</span>
           </div>
           <h4>→ {e.to_name || e.to_source_id}</h4>
           {e.from_section && <div className="desc"><b>From:</b> {e.from_section}</div>}

@@ -4,6 +4,12 @@ function topicLabel(topicId, topicLabels) {
   return topicLabels?.[topicId] || topicId || 'uncategorized';
 }
 
+const STATUS_BADGE = {
+  draft: 'flag', deferred: 'flag',
+  accepted: 'tasks',
+  rejected: 'critical', superseded: 'critical',
+};
+
 export default function RequirementsBrowser({
   topics, topicLabels, filters, onFilterChange, results, loading, selectedId, onSelect,
 }) {
@@ -25,6 +31,14 @@ export default function RequirementsBrowser({
           {topics.map((t) => (
             <option key={t.topic_id} value={t.topic_id}>{topicLabel(t.topic_id, topicLabels)} ({t.count})</option>
           ))}
+        </select>
+        <select value={filters.status} onChange={(e) => onFilterChange({ status: e.target.value, page: 1 })}>
+          <option value="">All statuses</option>
+          <option value="draft">draft</option>
+          <option value="accepted">accepted</option>
+          <option value="rejected">rejected</option>
+          <option value="deferred">deferred</option>
+          <option value="superseded">superseded</option>
         </select>
         <label className="filter-check">
           <input
@@ -49,6 +63,7 @@ export default function RequirementsBrowser({
           >
             <div className="req-row-top">
               <span className="req-citation">{r.citation}</span>
+              <span className={`tree-badge ${STATUS_BADGE[r.status] || ''}`}>{r.status}</span>
               {r.is_critical && <span className="tree-badge critical">critical</span>}
               {r.review_flags?.length > 0 && <span className="tree-badge flag">flagged</span>}
             </div>

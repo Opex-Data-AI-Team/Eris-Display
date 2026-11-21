@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: eris-display
+    runtime: node
+    plan: free
+    buildCommand: npm run build
+    startCommand: npm start
+    envVars:
+      - key: MONGODB_URI
+        sync: false
+      - key: MONGODB_DB
+        value: eris
+      - key: NODE_ENV
+        value: production

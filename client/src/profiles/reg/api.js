@@ -1,4 +1,4 @@
-const BASE = '/api';
+const BASE = '/api/reg';
 
 async function getJSON(path) {
   const res = await fetch(`${BASE}${path}`);

@@ -14,7 +14,7 @@ export default function StatStrip({ counts }) {
     ['Topics', counts.topics],
   ];
   return (
-    <div className="stat-strip">
+    <div className="stat-strip" style={{ gridTemplateColumns: `repeat(${items.length}, 1fr)` }}>
       {items.map(([label, n]) => (
         <div className="stat" key={label}>
           <div className="n tabular">{n.toLocaleString()}</div>

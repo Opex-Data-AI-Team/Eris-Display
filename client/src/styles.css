@@ -64,6 +64,7 @@ button{font-family:inherit;}
   padding:14px 24px; border-bottom:1px solid var(--border); background:var(--surface);
   flex-shrink:0;
 }
+.topbar-left{display:flex; align-items:center; gap:16px; flex-wrap:wrap;}
 .topbar .brand{display:flex; align-items:center; gap:10px;}
 .topbar .mark{
   width:28px; height:28px; border-radius:7px; background:var(--accent);
@@ -80,6 +81,14 @@ button{font-family:inherit;}
 }
 .topnav button.active{background:var(--accent); color:#fff;}
 .topnav button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
+
+.profile-switcher{display:flex; gap:3px; background:var(--surface-2); padding:3px; border-radius:9px; border:1px solid var(--border);}
+.profile-switcher button{
+  border:none; background:none; padding:7px 13px; border-radius:7px; cursor:pointer;
+  font-size:12px; font-weight:600; color:var(--text-soft); font-family:var(--font-display);
+}
+.profile-switcher button.active{background:var(--text); color:var(--bg);}
+.profile-switcher button:focus-visible{outline:2px solid var(--accent); outline-offset:2px;}
 
 .theme-toggle{
   border:1px solid var(--border); background:var(--surface); color:var(--text-soft);

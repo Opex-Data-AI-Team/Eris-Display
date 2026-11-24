@@ -391,6 +391,24 @@ function serializeRegSource(s) {
   };
 }
 
+// The sidebar/overview list only ever shows issuer, number, title and the
+// three counts (SourceSidebar.jsx) - the full serializer above carries the
+// AI summary, known_gaps, commencement narrative, official_copy and
+// depends_on too, which is ~3.2KB per source and only ever used by the
+// single-source detail view. At 296 sources that's the difference between a
+// ~130KB and a ~1MB response for a page that renders a list of cards.
+function serializeRegSourceSummary(s) {
+  return {
+    id: toId(s._id),
+    status: s.status,
+    issuer: s.issuer || null,
+    number: s.number,
+    title: s.title,
+    doc_type: s.doc_type,
+    authority_tier: s.authority_tier,
+  };
+}
+
 function serializeRequirement(r) {
   return {
     id: toId(r._id),
@@ -607,11 +625,13 @@ async function computeRegOverview() {
   ]);
 
   const [sourceDocs, countMaps] = await Promise.all([
-    erisRegDb.collection('sources').find().toArray(),
+    erisRegDb.collection('sources')
+      .find({}, { projection: { status: 1, issuer: 1, number: 1, title: 1, doc_type: 1, authority_tier: 1 } })
+      .toArray(),
     regAllSourceCounts(),
   ]);
   const sourcesSummary = sourceDocs.map((s) => ({
-    ...serializeRegSource(s),
+    ...serializeRegSourceSummary(s),
     ...pickRegSourceCounts(countMaps, toId(s._id)),
   }));
 
@@ -640,11 +660,13 @@ app.get('/api/reg/overview', async (req, res) => {
 
 app.get('/api/reg/sources', async (req, res) => {
   const [sourceDocs, countMaps] = await Promise.all([
-    erisRegDb.collection('sources').find().toArray(),
+    erisRegDb.collection('sources')
+      .find({}, { projection: { status: 1, issuer: 1, number: 1, title: 1, doc_type: 1, authority_tier: 1 } })
+      .toArray(),
     regAllSourceCounts(),
   ]);
   res.json(sourceDocs.map((s) => ({
-    ...serializeRegSource(s),
+    ...serializeRegSourceSummary(s),
     ...pickRegSourceCounts(countMaps, toId(s._id)),
   })));
 });
@@ -652,7 +674,9 @@ app.get('/api/reg/sources', async (req, res) => {
 app.get('/api/reg/sources/:id', async (req, res) => {
   const _id = oid(req.params.id);
   if (!_id) return res.status(400).json({ error: 'invalid id' });
-  const source = await erisRegDb.collection('sources').findOne({ _id });
+  // full_text is served separately (below) - it can run 300KB+ and the
+  // detail view never renders it inline, only on explicit "view full text".
+  const source = await erisRegDb.collection('sources').findOne({ _id }, { projection: { full_text: 0 } });
   if (!source) return res.status(404).json({ error: 'not found' });
 
   const counts = await regSourceCounts(_id);

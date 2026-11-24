@@ -580,6 +580,12 @@ async function regSourceCounts(sourceObjId) {
 // better trade than making every viewer wait on a cold read each time.
 let overviewCache = { data: null, at: 0 };
 const OVERVIEW_CACHE_MS = 30_000;
+// Single-flight guard: while the cache is cold, concurrent requests (several
+// tabs opening at once, or a request racing the startup warm-up) must share
+// one in-flight computation instead of each independently re-running the
+// full cross-collection scan - exactly the scenario that piles the most load
+// onto the cluster at the moment it's least able to take it.
+let overviewInFlight = null;
 
 async function computeRegOverview() {
   const [
@@ -626,7 +632,10 @@ app.get('/api/reg/overview', async (req, res) => {
   if (overviewCache.data && Date.now() - overviewCache.at < OVERVIEW_CACHE_MS) {
     return res.json(overviewCache.data);
   }
-  res.json(await computeRegOverview());
+  if (!overviewInFlight) {
+    overviewInFlight = computeRegOverview().finally(() => { overviewInFlight = null; });
+  }
+  res.json(await overviewInFlight);
 });
 
 app.get('/api/reg/sources', async (req, res) => {
@@ -961,8 +970,11 @@ client.connect().then(() => {
   erisRegDb = client.db('eris_reg');
   app.listen(PORT, () => console.log(`eris-display API listening on http://localhost:${PORT}`));
   // Fire-and-forget: pre-warm the overview cache so the first real visitor
-  // doesn't pay the 10-15s cold-read cost themselves.
-  computeRegOverview().catch((err) => console.error('Overview warm-up failed', err));
+  // doesn't pay the 10-15s cold-read cost themselves. Goes through the same
+  // single-flight guard as the route handler so a real request racing this
+  // warm-up awaits the same computation instead of starting a second one.
+  overviewInFlight = computeRegOverview().finally(() => { overviewInFlight = null; });
+  overviewInFlight.catch((err) => console.error('Overview warm-up failed', err));
 }).catch((err) => {
   console.error('Failed to connect to MongoDB', err);
   process.exit(1);

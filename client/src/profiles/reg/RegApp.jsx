@@ -6,14 +6,28 @@ import SourceSidebar from './components/SourceSidebar.jsx';
 import SourceDocument from './components/SourceDocument.jsx';
 import RequirementsBrowser from './components/RequirementsBrowser.jsx';
 import RequirementInspector from './components/RequirementInspector.jsx';
+import CanonicalRequirementsView from './components/CanonicalRequirementsView.jsx';
+import ControlObjectivesView from './components/ControlObjectivesView.jsx';
+import ControlsView from './components/ControlsView.jsx';
+import PatternLibraryView from './components/PatternLibraryView.jsx';
 import SanctionsRegister from './components/SanctionsRegister.jsx';
 import DependenciesView from './components/DependenciesView.jsx';
 import RelationshipsView from './components/RelationshipsView.jsx';
-import ConflictsView from './components/ConflictsView.jsx';
-import CanonicalRequirementsView from './components/CanonicalRequirementsView.jsx';
 import ReferenceDataView from './components/ReferenceDataView.jsx';
 
 const DEFAULT_FILTERS = { q: '', topic: '', critical: '', status: '', page: 1 };
+
+const TABS = [
+  ['sources', 'Sources'],
+  ['canonical', 'Canonical'],
+  ['objectives', 'Objectives'],
+  ['controls', 'Controls'],
+  ['patterns', 'Patterns'],
+  ['sanctions', 'Sanctions'],
+  ['dependencies', 'Dependencies'],
+  ['relationships', 'Relationships'],
+  ['reference', 'Reference data'],
+];
 
 export default function RegApp({ theme, setTheme, profile, setProfile }) {
   const [view, setView] = useState('sources');
@@ -41,7 +55,7 @@ export default function RegApp({ theme, setTheme, profile, setProfile }) {
       .then((data) => {
         setCounts(data.counts);
         setSources(data.sources);
-        if (data.sources.length > 0) setSelectedSourceId(data.sources[0].source_id);
+        if (data.sources.length > 0) setSelectedSourceId(data.sources[0].id);
       })
       .catch((e) => setError(e.message));
 
@@ -79,10 +93,10 @@ export default function RegApp({ theme, setTheme, profile, setProfile }) {
     setFilters((f) => ({ ...f, ...patch }));
   }, []);
 
-  const onSelectRequirement = useCallback((requirementId) => {
-    setSelectedRequirementId(requirementId);
+  const onSelectRequirement = useCallback((id) => {
+    setSelectedRequirementId(id);
     setRequirementLoading(true);
-    api.requirement(requirementId)
+    api.requirement(id)
       .then(setRequirementDetail)
       .catch((e) => setError(e.message))
       .finally(() => setRequirementLoading(false));
@@ -98,18 +112,14 @@ export default function RegApp({ theme, setTheme, profile, setProfile }) {
             <div className="mark">E</div>
             <div>
               <h1>Eris</h1>
-              <div className="sub">regulatory requirements register · live from MongoDB</div>
+              <div className="sub">regulatory compliance chain · live from MongoDB</div>
             </div>
           </div>
           <ProfileSwitcher profile={profile} setProfile={setProfile} />
           <nav className="topnav">
-            <button className={view === 'sources' ? 'active' : ''} onClick={() => setView('sources')}>Sources</button>
-            <button className={view === 'sanctions' ? 'active' : ''} onClick={() => setView('sanctions')}>Sanctions</button>
-            <button className={view === 'dependencies' ? 'active' : ''} onClick={() => setView('dependencies')}>Dependencies</button>
-            <button className={view === 'relationships' ? 'active' : ''} onClick={() => setView('relationships')}>Relationships</button>
-            <button className={view === 'conflicts' ? 'active' : ''} onClick={() => setView('conflicts')}>Conflicts</button>
-            <button className={view === 'canonical' ? 'active' : ''} onClick={() => setView('canonical')}>Canonical</button>
-            <button className={view === 'reference' ? 'active' : ''} onClick={() => setView('reference')}>Reference data</button>
+            {TABS.map(([key, label]) => (
+              <button key={key} className={view === key ? 'active' : ''} onClick={() => setView(key)}>{label}</button>
+            ))}
           </nav>
         </div>
         <button className="theme-toggle" onClick={() => setTheme((t) => (t === 'light' ? 'dark' : 'light'))}>
@@ -152,41 +162,14 @@ export default function RegApp({ theme, setTheme, profile, setProfile }) {
         </div>
       )}
 
-      {view === 'sanctions' && (
-        <div className="main" style={{ flex: 1 }}>
-          <SanctionsRegister />
-        </div>
-      )}
-
-      {view === 'dependencies' && (
-        <div className="main" style={{ flex: 1 }}>
-          <DependenciesView />
-        </div>
-      )}
-
-      {view === 'relationships' && (
-        <div className="main" style={{ flex: 1 }}>
-          <RelationshipsView />
-        </div>
-      )}
-
-      {view === 'conflicts' && (
-        <div className="main" style={{ flex: 1 }}>
-          <ConflictsView />
-        </div>
-      )}
-
-      {view === 'canonical' && (
-        <div className="main" style={{ flex: 1 }}>
-          <CanonicalRequirementsView />
-        </div>
-      )}
-
-      {view === 'reference' && (
-        <div className="main" style={{ flex: 1 }}>
-          <ReferenceDataView />
-        </div>
-      )}
+      {view === 'canonical' && <div className="main" style={{ flex: 1 }}><CanonicalRequirementsView /></div>}
+      {view === 'objectives' && <div className="main" style={{ flex: 1 }}><ControlObjectivesView /></div>}
+      {view === 'controls' && <div className="main" style={{ flex: 1 }}><ControlsView /></div>}
+      {view === 'patterns' && <div className="main" style={{ flex: 1 }}><PatternLibraryView /></div>}
+      {view === 'sanctions' && <div className="main" style={{ flex: 1 }}><SanctionsRegister /></div>}
+      {view === 'dependencies' && <div className="main" style={{ flex: 1 }}><DependenciesView /></div>}
+      {view === 'relationships' && <div className="main" style={{ flex: 1 }}><RelationshipsView /></div>}
+      {view === 'reference' && <div className="main" style={{ flex: 1 }}><ReferenceDataView /></div>}
     </div>
   );
 }

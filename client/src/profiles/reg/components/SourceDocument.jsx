@@ -54,7 +54,7 @@ export default function SourceDocument({ data, sourceId }) {
     <div className="doc-panel">
       <div className="doc-head">
         <div>
-          <div className="eyebrow">{source.source_id} · {source.doc_type} · {source.authority_tier}</div>
+          <div className="eyebrow">{source.doc_type} · {source.authority_tier}</div>
           <h2>{source.title}</h2>
           <div className="refno">{source.number || 'no reference number'} · v{source.version}</div>
         </div>
@@ -76,7 +76,6 @@ export default function SourceDocument({ data, sourceId }) {
 
       <Section title="Identity">
         <Field label="Issuer">{source.issuer ? `${source.issuer.name} (${source.issuer.code})` : null}</Field>
-        <Field label="Regulator ID">{source.regulator_id}</Field>
         <Field label="Legacy RegWatch ID">{source.legacy_regwatch_id}</Field>
         <Field label="Secondary references">
           {source.secondary_refs?.length > 0 && (
@@ -110,8 +109,8 @@ export default function SourceDocument({ data, sourceId }) {
       )}
 
       <Section title="Lineage &amp; verification">
-        <Field label="Supersedes">{source.supersedes}</Field>
-        <Field label="Superseded by">{source.superseded_by}</Field>
+        <Field label="Supersedes" mono>{source.supersedes}</Field>
+        <Field label="Superseded by" mono>{source.superseded_by}</Field>
         <Field label="Changes from previous">
           {source.changes_from_previous?.sections_changed?.length > 0 && (
             <div className="chip-row">{source.changes_from_previous.sections_changed.map((s) => <span className="chip" key={s}>{s}</span>)}</div>

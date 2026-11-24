@@ -31,25 +31,42 @@ export default function RequirementInspector({ detail, loading, topicLabels }) {
     return (
       <div className="inspector-panel">
         <div className="panel-title">Inspector</div>
-        <div className="empty-state">Select a requirement to see its full text and provenance.</div>
+        <div className="empty-state">Select a requirement to see its full text, chain and provenance.</div>
       </div>
     );
   }
 
-  const { requirement: r, sanctions } = detail;
+  const { requirement: r, sanctions, canonical, control_objectives, controls } = detail;
+  const controlsByObjective = new Map();
+  (controls || []).forEach((c) => {
+    const list = controlsByObjective.get(c.objective_id) || [];
+    list.push(c);
+    controlsByObjective.set(c.objective_id, list);
+  });
 
   return (
     <div className="inspector-panel">
-      <div className="ins-eyebrow">{r.requirement_id} · {r.unit_type} · {topicLabels?.[r.topic_id] || r.topic_id}</div>
+      <div className="ins-eyebrow">{r.unit_type} · {r.topic_parent?.replace(/_/g, ' ')}</div>
       <div className="ins-title">{r.citation}</div>
+      <div className="topic-breadcrumb" style={{ marginBottom: 10 }}>
+        <b>{r.topic_parent?.replace(/_/g, ' ')}</b> › {topicLabels?.[r.topic_id] || r.topic_id}
+      </div>
 
       <div className="pill-row">
         <span className={`status-pill ${STATUS_PILL[r.status] || ''}`}>{r.status}</span>
-        {r.is_critical && <span className="pill mandatory">critical</span>}
-        {r.mandatory && <span className="pill owner">mandatory</span>}
+        {r.is_critical === true && <span className="pill mandatory">critical</span>}
+        {r.is_critical === false && <span className="pill">not critical</span>}
+        {r.mandatory === true && <span className="pill owner">mandatory</span>}
+        {r.mandatory === false && <span className="pill">discretionary</span>}
         <span className="pill">{r.canonical_state?.replace(/_/g, ' ')}</span>
         {r.ai?.confidence != null && <span className="pill">confidence {Math.round(r.ai.confidence * 100)}%</span>}
       </div>
+      {(r.mandatory_basis || r.is_critical_basis) && (
+        <p className="ins-text" style={{ marginTop: -8 }}>
+          {r.mandatory_basis && <><b>Mandatory basis:</b> {r.mandatory_basis}. </>}
+          {r.is_critical_basis && <><b>Criticality basis:</b> {r.is_critical_basis}.</>}
+        </p>
+      )}
 
       <blockquote className="original-text">{r.original_text}</blockquote>
 
@@ -65,6 +82,61 @@ export default function RequirementInspector({ detail, loading, topicLabels }) {
           </div>
         </>
       )}
+
+      <div className="ins-subhead">Compliance chain</div>
+      <div className="chain">
+        <div className="chain-step">
+          <div className="chain-label">Requirement</div>
+          <h5>{r.citation}</h5>
+          <div className="desc">{r.summary}</div>
+        </div>
+
+        {!canonical && (
+          <div className="chain-step">
+            <div className="chain-label">Canonical requirement</div>
+            <div className="chain-empty">
+              {r.canonical_state === 'no_candidate'
+                ? 'No equivalent obligation found elsewhere yet — this requirement hasn’t been deduplicated across regulations.'
+                : 'Not yet assessed for cross-regulation deduplication.'}
+            </div>
+          </div>
+        )}
+
+        {canonical && (
+          <div className="chain-step">
+            <div className="chain-label">Canonical requirement · {canonical.status}{canonical.confidence != null ? ` · ${Math.round(canonical.confidence * 100)}%` : ''}</div>
+            <h5>{canonical.description}</h5>
+            {canonical.rationale && <div className="desc">{canonical.rationale}</div>}
+            <div className="li-score" style={{ marginTop: 6 }}>{canonical.requirement_ids.length} requirement{canonical.requirement_ids.length === 1 ? '' : 's'} across regulations map here</div>
+          </div>
+        )}
+
+        {control_objectives?.length === 0 && canonical && (
+          <div className="chain-step">
+            <div className="chain-label">Control objectives</div>
+            <div className="chain-empty">No control objective derived from this canonical requirement yet.</div>
+          </div>
+        )}
+
+        {control_objectives?.map((o) => (
+          <div className="chain-step" key={o.id}>
+            <div className="chain-label">Control objective · {o.status}{o.direct_requirement_link ? ' · direct link' : ''}</div>
+            <h5>{o.outcome}</h5>
+            {o.rationale && <div className="desc">{o.rationale}</div>}
+            <div className="chain-controls">
+              {(controlsByObjective.get(o.id) || []).length === 0 && (
+                <div className="chain-empty">No control activity defined for this objective yet.</div>
+              )}
+              {(controlsByObjective.get(o.id) || []).map((c) => (
+                <div className="mini-control" key={c.id}>
+                  <b>{c.type} · {c.nature}{c.frequency ? ` · ${c.frequency}` : ''}</b> — {c.activity}
+                  {c.owner_role && <span style={{ color: 'var(--muted)' }}> (owner: {c.owner_role})</span>}
+                </div>
+              ))}
+            </div>
+          </div>
+        ))}
+      </div>
 
       {r.guidance_reason && (
         <>
@@ -109,6 +181,10 @@ export default function RequirementInspector({ detail, loading, topicLabels }) {
             <div className="task-card" key={s.id}>
               <h4>{s.citation}</h4>
               <div className="desc">{s.summary}</div>
+              <div className="task-meta" style={{ marginTop: 6 }}>
+                <span className="pill">{s.link_status}</span>
+                {s.link_confidence != null && <span className="pill">{Math.round(s.link_confidence * 100)}% confidence</span>}
+              </div>
             </div>
           ))}
         </>
@@ -142,7 +218,7 @@ export default function RequirementInspector({ detail, loading, topicLabels }) {
 
       <div className="audit-row" style={{ marginTop: 14 }}>
         <span>page {r.anchor?.page ?? '—'}</span>
-        <span>batch {r.batch_id || '—'}</span>
+        <span>{r.pages?.length > 1 ? `${r.pages.length} pages` : ''}</span>
       </div>
     </div>
   );

@@ -4,6 +4,11 @@ function topicLabel(topicId, topicLabels) {
   return topicLabels?.[topicId] || topicId || 'uncategorized';
 }
 
+function parentLabel(parent) {
+  if (!parent) return 'uncategorized';
+  return parent.replace(/_/g, ' ');
+}
+
 const STATUS_BADGE = {
   draft: 'flag', deferred: 'flag',
   accepted: 'tasks',
@@ -29,7 +34,7 @@ export default function RequirementsBrowser({
         <select value={filters.topic} onChange={(e) => onFilterChange({ topic: e.target.value, page: 1 })}>
           <option value="">All topics</option>
           {topics.map((t) => (
-            <option key={t.topic_id} value={t.topic_id}>{topicLabel(t.topic_id, topicLabels)} ({t.count})</option>
+            <option key={t.topic_id} value={t.topic_id}>{parentLabel(t.topic_id)} ({t.count})</option>
           ))}
         </select>
         <select value={filters.status} onChange={(e) => onFilterChange({ status: e.target.value, page: 1 })}>
@@ -56,15 +61,16 @@ export default function RequirementsBrowser({
         {!loading && results?.items.map((r) => (
           <div
             key={r.id}
-            className={`req-row ${r.requirement_id === selectedId ? 'selected' : ''}`}
+            className={`req-row ${r.id === selectedId ? 'selected' : ''}`}
             tabIndex={0}
-            onClick={() => onSelect(r.requirement_id)}
-            onKeyDown={(e) => { if (e.key === 'Enter') onSelect(r.requirement_id); }}
+            onClick={() => onSelect(r.id)}
+            onKeyDown={(e) => { if (e.key === 'Enter') onSelect(r.id); }}
           >
             <div className="req-row-top">
               <span className="req-citation">{r.citation}</span>
               <span className={`tree-badge ${STATUS_BADGE[r.status] || ''}`}>{r.status}</span>
               {r.is_critical && <span className="tree-badge critical">critical</span>}
+              {r.canonical_id && <span className="tree-badge tasks">mapped</span>}
               {r.review_flags?.length > 0 && <span className="tree-badge flag">flagged</span>}
             </div>
             <div className="req-summary">{r.summary}</div>

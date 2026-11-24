@@ -339,3 +339,34 @@ button{font-family:inherit;}
   font-family:var(--font-mono); font-size:10px; text-transform:uppercase; letter-spacing:0.05em;
   color:var(--muted); margin-bottom:6px;
 }
+
+/* ---------- Compliance chain (requirement -> canonical -> objective -> control) ---------- */
+.chain{margin:14px 0;}
+.chain-step{position:relative; padding:11px 13px; background:var(--surface-2); border:1px solid var(--border); border-radius:10px;}
+.chain-step + .chain-step{margin-top:16px;}
+.chain-step::before{
+  content:''; position:absolute; left:18px; top:-16px; width:2px; height:16px; background:var(--border);
+}
+.chain-step:first-child::before{display:none;}
+.chain-label{
+  font-family:var(--font-mono); font-size:9px; text-transform:uppercase; letter-spacing:0.07em;
+  color:var(--accent); margin-bottom:4px;
+}
+.chain-step h5{margin:0 0 4px; font-size:12.5px; font-weight:700; font-family:var(--font-display);}
+.chain-step .desc{font-size:11.5px; color:var(--text-soft); line-height:1.45;}
+.chain-empty{font-size:11.5px; color:var(--muted); font-style:italic; padding:8px 0;}
+.chain-controls{margin-top:9px; padding-top:9px; border-top:1px dashed var(--border); display:flex; flex-direction:column; gap:7px;}
+.mini-control{font-size:11px; color:var(--text-soft);}
+.mini-control b{color:var(--text); font-weight:600;}
+
+.kind-badge{
+  font-family:var(--font-mono); font-size:9px; padding:2px 7px; border-radius:7px; flex-shrink:0;
+  border:1px solid var(--border); color:var(--muted); text-transform:uppercase; letter-spacing:0.03em;
+}
+.kind-badge.requirement{border-color:var(--accent); color:var(--accent);}
+.kind-badge.canonical{border-color:var(--good); color:var(--good);}
+.kind-badge.objective{border-color:var(--warn); color:var(--warn);}
+.kind-badge.source{border-color:var(--muted); color:var(--muted);}
+
+.topic-breadcrumb{font-family:var(--font-mono); font-size:10.5px; color:var(--muted);}
+.topic-breadcrumb b{color:var(--text-soft); font-weight:500;}

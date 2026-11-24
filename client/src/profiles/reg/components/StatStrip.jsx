@@ -6,11 +6,11 @@ export default function StatStrip({ counts }) {
     ['Sources', counts.sources],
     ['Requirements', counts.requirements],
     ['Critical requirements', counts.critical_requirements],
-    ['Sanctions', counts.sanctions],
-    ['Dependency edges', counts.dependency_edges],
-    ['Relationships', counts.relationships],
-    ['Conflicts', counts.conflicts],
     ['Canonical requirements', counts.canonical_requirements],
+    ['Control objectives', counts.control_objectives],
+    ['Controls', counts.controls],
+    ['Sanctions', counts.sanctions],
+    ['Relationships', counts.relationships],
     ['Topics', counts.topics],
   ];
   return (
